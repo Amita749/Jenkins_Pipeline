@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {
                     // Run all tests in Sandbox with coverage
-                  <!--  bat 'sf apex run test --target-org %TARGET_ALIAS% --code-coverage --json --output-dir coverage-results --wait 10' -->
+                  // bat 'sf apex run test --target-org %TARGET_ALIAS% --code-coverage --json --output-dir coverage-results --wait 10' -->
                     // Run only AdderTest class in Sandbox with coverage
                      bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
 
