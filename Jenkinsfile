@@ -39,17 +39,18 @@ pipeline {
             steps {
                 script {
                     // workspace-safe coverage folder
-                    def coverageDir = "${WORKSPACE}/coverage-results"
+                    def coverageDir = "${WORKSPACE.replaceAll('\\\\','/')}/coverage-results"
                     bat "mkdir ${coverageDir} || exit 0"
 
                     // run only the specific test class with code coverage
                     bat "sf apex run test --target-org %TARGET_ALIAS% --tests %TEST_CLASS% --code-coverage --json --output-dir ${coverageDir} --wait 10"
 
-                    def coverageFile = "${coverageDir}/test-run-codecoverage.json"
-
-                    if (!fileExists(coverageFile)) {
-                        error("❌ Coverage JSON file not found: ${coverageFile}. Please check if tests ran successfully.")
+                    // dynamically find the latest coverage JSON file (handles timestamped filenames)
+                    def files = findFiles(glob: "${coverageDir}/test-run-codecoverage*.json")
+                    if (files.length == 0) {
+                        error("❌ No coverage JSON file found! Check if tests ran successfully.")
                     }
+                    def coverageFile = files[0].path
 
                     // parse coverage safely
                     def jsonText = readFile(coverageFile)
