@@ -12,41 +12,6 @@ pipeline {
 
         JWT_KEY   = credentials('sf_jwt_key')
         SFDC_HOST = 'https://test.salesforce.com'
-stage('Run Specific Test & Check Coverage') {
-    steps {
-        script {
-            // workspace-safe coverage folder
-            def coverageDir = "${WORKSPACE}/coverage-results"
-            bat "if not exist \"${coverageDir}\" mkdir \"${coverageDir}\""
-
-            // run only the specific test class with code coverage
-            bat "sf apex run test --target-org %TARGET_ALIAS% --tests %TEST_CLASS% --code-coverage --json --output-dir \"${coverageDir}\" --wait 10"
-
-            // pick the JSON file dynamically without findFiles()
-            def coverageFile = null
-            def folder = new File(coverageDir)
-            def files = folder.listFiles().findAll { it.name.startsWith('test-run-codecoverage') && it.name.endsWith('.json') }
-            if (files.size() == 0) {
-                error("❌ No coverage JSON file found! Check if tests ran successfully.")
-            }
-            coverageFile = files[0].getAbsolutePath()
-
-            // parse coverage safely
-            def jsonText = readFile(coverageFile)
-            def json = new groovy.json.JsonSlurper().parseText(jsonText)
-
-            def covered = json.summary.coveredLines as Integer
-            def uncovered = json.summary.uncoveredLines as Integer
-            def coverage = (covered * 100) / (covered + uncovered)
-
-            echo "Coverage from ${env.TEST_CLASS}: ${coverage}%"
-
-            if (coverage < 75) {
-                error("❌ Coverage ${coverage}% < 75%. Deployment stopped.")
-            }
-        }
-    }
-}
 
         TEST_CLASS = 'AdderTest'   // specify the test class to run
     }
@@ -74,18 +39,20 @@ stage('Run Specific Test & Check Coverage') {
             steps {
                 script {
                     // workspace-safe coverage folder
-                    def coverageDir = "${WORKSPACE.replaceAll('\\\\','/')}/coverage-results"
-                    bat "mkdir ${coverageDir} || exit 0"
+                    def coverageDir = "${WORKSPACE}/coverage-results"
+                    bat "if not exist \"${coverageDir}\" mkdir \"${coverageDir}\""
 
                     // run only the specific test class with code coverage
-                    bat "sf apex run test --target-org %TARGET_ALIAS% --tests %TEST_CLASS% --code-coverage --json --output-dir ${coverageDir} --wait 10"
+                    bat "sf apex run test --target-org %TARGET_ALIAS% --tests %TEST_CLASS% --code-coverage --json --output-dir \"${coverageDir}\" --wait 10"
 
-                    // dynamically find the latest coverage JSON file (handles timestamped filenames)
-                    def files = findFiles(glob: "${coverageDir}/test-run-codecoverage*.json")
-                    if (files.length == 0) {
+                    // dynamically find the coverage JSON file
+                    def coverageFile = null
+                    def folder = new File(coverageDir)
+                    def files = folder.listFiles().findAll { it.name.startsWith('test-run-codecoverage') && it.name.endsWith('.json') }
+                    if (files.size() == 0) {
                         error("❌ No coverage JSON file found! Check if tests ran successfully.")
                     }
-                    def coverageFile = files[0].path
+                    coverageFile = files[0].getAbsolutePath()
 
                     // parse coverage safely
                     def jsonText = readFile(coverageFile)
