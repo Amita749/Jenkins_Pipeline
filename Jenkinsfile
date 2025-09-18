@@ -33,28 +33,37 @@ pipeline {
             }
         }
 
-      
+        stage('Check Coverage in Sandbox') {
+            steps {
+                script {
+                    // Run all tests in Sandbox with coverage
+                    bat 'sf apex run test --target-org %TARGET_ALIAS% --code-coverage --json --output-dir coverage-results --wait 10'
 
-stage('Deploy Metadata to Target Org') {
-    steps {
-        // Deploy classes without running tests first
-        bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level NoTestRun'
-    }
-}
+                    // Parse coverage JSON
+                    def json = new groovy.json.JsonSlurper().parseText(readFile('coverage-results/test-run-codecoverage.json'))
+                    def coverage = (json.summary.coveredLines * 100) / (json.summary.coveredLines + json.summary.uncoveredLines)
 
-stage('Run Tests and Coverage') {
-    steps {
-        // Run tests for HelloWorldClassTest and AdderTest after deployment
-        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
-    }
-}
+                    echo "Sandbox Coverage: ${coverage}%"
 
+                    if (coverage < 75) {
+                        error("❌ Coverage ${coverage}% < 75%. Deployment stopped.")
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Metadata to Target Org') {
+            steps {
+                // Only runs if coverage >= 75%
+                bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts'
+            }
+        }
     }
 
     post {
         always {
-           // archiveArtifacts artifacts: 'coverage-results/**', onlyIfSuccessful: false
             echo 'Deployment pipeline finished.'
+            archiveArtifacts artifacts: 'coverage-results/**', onlyIfSuccessful: false
         }
     }
 }
