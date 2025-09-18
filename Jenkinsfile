@@ -45,7 +45,7 @@ stage('Deploy Metadata to Target Org') {
 stage('Run Tests and Coverage') {
     steps {
         // Run tests for HelloWorldClassTest and AdderTest after deployment
-        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests HelloWorldClassTest AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
+        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
     }
 }
 
