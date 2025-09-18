@@ -12,6 +12,8 @@ pipeline {
 
         JWT_KEY   = credentials('sf_jwt_key')
         SFDC_HOST = 'https://test.salesforce.com'
+
+        TEST_CLASS = 'AdderTest'   // specify the test class to run
     }
 
     stages {
@@ -33,20 +35,31 @@ pipeline {
             }
         }
 
-        stage('Check Coverage in Sandbox') {
+        stage('Run Specific Test & Check Coverage') {
             steps {
                 script {
-                    // Run all tests in Sandbox with coverage
-                  // bat 'sf apex run test --target-org %TARGET_ALIAS% --code-coverage --json --output-dir coverage-results --wait 10' -->
-                    // Run only AdderTest class in Sandbox with coverage
-                     bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
+                    // workspace-safe coverage folder
+                    def coverageDir = "${WORKSPACE}/coverage-results"
+                    bat "mkdir ${coverageDir} || exit 0"
 
+                    // run only the specific test class with code coverage
+                    bat "sf apex run test --target-org %TARGET_ALIAS% --tests %TEST_CLASS% --code-coverage --json --output-dir ${coverageDir} --wait 10"
 
-                    // Parse coverage JSON
-                    def json = new groovy.json.JsonSlurper().parseText(readFile('coverage-results/test-run-codecoverage.json'))
-                    def coverage = (json.summary.coveredLines * 100) / (json.summary.coveredLines + json.summary.uncoveredLines)
+                    def coverageFile = "${coverageDir}/test-run-codecoverage.json"
 
-                    echo "Sandbox Coverage: ${coverage}%"
+                    if (!fileExists(coverageFile)) {
+                        error("❌ Coverage JSON file not found: ${coverageFile}. Please check if tests ran successfully.")
+                    }
+
+                    // parse coverage safely
+                    def jsonText = readFile(coverageFile)
+                    def json = new groovy.json.JsonSlurper().parseText(jsonText)
+
+                    def covered = json.summary.coveredLines as Integer
+                    def uncovered = json.summary.uncoveredLines as Integer
+                    def coverage = (covered * 100) / (covered + uncovered)
+
+                    echo "Coverage from ${env.TEST_CLASS}: ${coverage}%"
 
                     if (coverage < 75) {
                         error("❌ Coverage ${coverage}% < 75%. Deployment stopped.")
@@ -57,7 +70,7 @@ pipeline {
 
         stage('Deploy Metadata to Target Org') {
             steps {
-                // Only runs if coverage >= 75%
+                // only deploy if coverage >= 75%
                 bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts'
             }
         }
