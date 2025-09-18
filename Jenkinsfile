@@ -28,61 +28,25 @@ pipeline {
                 bat 'sf auth jwt grant --client-id %TARGET_CONSUMER_KEY% --jwt-key-file "%JWT_KEY%" --username %TARGET_USERNAME% --instance-url %SFDC_HOST% --alias %TARGET_ALIAS%'
             }
         }
-
-        stage('Retrieve Metadata from Source Org') {
-            steps {
-                bat 'sf project retrieve start --manifest manifest/package.xml --target-org %SOURCE_ALIAS% --wait 10 --ignore-conflicts'
-            }
-        }
-
-        stage('Run Specific Test & Check Coverage') {
-            steps {
-                script {
-                    // workspace-safe coverage folder
-                    def coverageDir = "${WORKSPACE}/coverage-results"
-                    bat "if not exist \"${coverageDir}\" mkdir \"${coverageDir}\""
-
-                    // run only the specific test class with code coverage
-                    bat "sf apex run test --target-org %TARGET_ALIAS% --tests %TEST_CLASS% --code-coverage --json --output-dir \"${coverageDir}\" --wait 10"
-
-                    // dynamically find the coverage JSON file
-                    def coverageFile = null
-                    def folder = new File(coverageDir)
-                    def files = folder.listFiles().findAll { it.name.startsWith('test-run-codecoverage') && it.name.endsWith('.json') }
-                    if (files.size() == 0) {
-                        error("❌ No coverage JSON file found! Check if tests ran successfully.")
-                    }
-                    coverageFile = files[0].getAbsolutePath()
-
-                    // parse coverage safely
-                    def jsonText = readFile(coverageFile)
-                    def json = new groovy.json.JsonSlurper().parseText(jsonText)
-
-                    def covered = json.summary.coveredLines as Integer
-                    def uncovered = json.summary.uncoveredLines as Integer
-                    def coverage = (covered * 100) / (covered + uncovered)
-
-                    echo "Coverage from ${env.TEST_CLASS}: ${coverage}%"
-
-                    if (coverage < 75) {
-                        error("❌ Coverage ${coverage}% < 75%. Deployment stopped.")
-                    }
-                }
-            }
-        }
-
-        stage('Deploy Metadata to Target Org') {
-            steps {
-                // only deploy if coverage >= 75%
-                bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts'
-            }
-        }
+         stage('Run Tests and Coverage Before Deployment') {
+             steps {
+        // Run tests  AdderTest before deploying
+        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
     }
+         }
+      stage('Deploy Metadata to Target Org') {
+    steps {
+        bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests AdderTest'
+    }
+}
+         
+    }
+    
 
     post {
         always {
             echo 'Deployment pipeline finished.'
-            archiveArtifacts artifacts: 'coverage-results/**', onlyIfSuccessful: false
+        
         }
     }
 }
