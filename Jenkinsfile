@@ -13,7 +13,7 @@ pipeline {
         JWT_KEY   = credentials('sf_jwt_key')
         SFDC_HOST = 'https://test.salesforce.com'
 
-        TEST_CLASS = 'AdderTest'   // specify the test class to run
+        TEST_CLASS = 'StudentHandlerTest'   // specify the test class to run
     }
 
     stages {
@@ -28,17 +28,18 @@ pipeline {
                 bat 'sf auth jwt grant --client-id %TARGET_CONSUMER_KEY% --jwt-key-file "%JWT_KEY%" --username %TARGET_USERNAME% --instance-url %SFDC_HOST% --alias %TARGET_ALIAS%'
             }
         }
-         stage('Run Tests and Coverage Before Deployment') {
-             steps {
-        // Run tests  AdderTest before deploying
-        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
-    }
-         }
-      stage('Deploy Metadata to Target Org') {
-    steps {
-        bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests AdderTest'
-    }
-}
+         stage('Validate Deployment (Check-Only)') {
+            steps {
+                echo 'Running check-only deployment to validate Student object and handler classes...'
+                bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --check-only --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests %TEST_CLASSES%'
+            }
+        }
+        stage('Actual Deployment') {
+            steps {
+                echo 'Validation passed! Proceeding with actual deployment...'
+                bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests %TEST_CLASSES%'
+            }
+        }
          
     }
     
