@@ -9,4 +9,10 @@ private class AdderTest {
         Integer result2 = Adder.addNumbers(-3, 7);
         System.assertEquals(4, result2, '-3 + 7 should equal 4');
     }
-}
+    static void testsubstractNumbers(){
+
+        Integer result = Adder.subtractNumbers(10,5);
+        System.assertEquals(5, result, '10-5 should equal 5');
+    }  
+ }
+
