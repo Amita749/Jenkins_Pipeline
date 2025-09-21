@@ -12,6 +12,8 @@ pipeline {
 
         JWT_KEY   = credentials('sf_jwt_key')
         SFDC_HOST = 'https://test.salesforce.com'
+
+        TEST_CLASS = 'AdderTest'   // specify the test class to run
     }
 
     stages {
@@ -26,35 +28,25 @@ pipeline {
                 bat 'sf auth jwt grant --client-id %TARGET_CONSUMER_KEY% --jwt-key-file "%JWT_KEY%" --username %TARGET_USERNAME% --instance-url %SFDC_HOST% --alias %TARGET_ALIAS%'
             }
         }
-
-        stage('Retrieve Metadata from Source Org') {
-            steps {
-                bat 'sf project retrieve start --manifest manifest/package.xml --target-org %SOURCE_ALIAS% --wait 10 --ignore-conflicts'
-            }
-        }
-
-      
-
-stage('Deploy Metadata to Target Org') {
+         stage('Run Tests and Coverage Before Deployment') {
+             steps {
+        // Run tests  AdderTest before deploying
+        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
+    }
+         }
+      stage('Deploy Metadata to Target Org') {
     steps {
-        // Deploy classes without running tests first
-        bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level NoTestRun'
+        bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests AdderTest'
     }
 }
-
-stage('Run Tests and Coverage') {
-    steps {
-        // Run tests for HelloWorldClassTest and AdderTest after deployment
-        bat 'sf apex run test --target-org %TARGET_ALIAS% --tests HelloWorldClassTest AdderTest --code-coverage --json --output-dir coverage-results --wait 10'
+         
     }
-}
-
-    }
+    
 
     post {
         always {
-           // archiveArtifacts artifacts: 'coverage-results/**', onlyIfSuccessful: false
             echo 'Deployment pipeline finished.'
+        
         }
     }
 }
