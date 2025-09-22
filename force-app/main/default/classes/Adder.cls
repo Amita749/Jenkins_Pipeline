@@ -8,4 +8,8 @@ public class Adder {
     public static Integer subtractNumbers(Integer a, Integer b) {
         return a - b;
     }
+    // Method to subtract two numbers
+    public static Integer multiplyNumbers(Integer a, Integer b) {
+        return a * b;
+    }
 }
