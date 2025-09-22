@@ -1,53 +1,35 @@
 pipeline {
     agent any
 
-    environment {
-        SOURCE_CONSUMER_KEY = credentials('SOURCE_CONSUMER_KEY')
-        SOURCE_USERNAME     = credentials('SOURCE_USERNAME')
-        SOURCE_ALIAS        = 'SourceOrg'
-
-        TARGET_CONSUMER_KEY = credentials('TARGET_CONSUMER_KEY')
-        TARGET_USERNAME     = credentials('TARGET_USERNAME')
-        TARGET_ALIAS        = 'TargetOrg'
-
-        JWT_KEY   = credentials('sf_jwt_key')
-        SFDC_HOST = 'https://test.salesforce.com'
-
-        TEST_CLASS = 'StudentHandlerTest'   // specify the test class to run
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'feature/dev1', description: 'Git branch to deploy from')
+        choice(name: 'TARGET_ORG', choices: ['Jenkins1', 'Jenkins2'], description: 'Target Salesforce Org')
+        string(name: 'METADATA', defaultValue: 'ApexClass:MathHelper', description: 'Metadata to deploy (comma separated)')
     }
 
     stages {
-        stage('Authenticate Source Org') {
+        stage('Checkout') {
             steps {
-                bat 'sf auth jwt grant --client-id %SOURCE_CONSUMER_KEY% --jwt-key-file "%JWT_KEY%" --username %SOURCE_USERNAME% --instance-url %SFDC_HOST% --alias %SOURCE_ALIAS%'
+                git branch: "${params.BRANCH_NAME}",
+                    url: 'https://github.com/Amita749/Salesforce-CICD.git'
             }
         }
 
-        stage('Authenticate Target Org') {
+        stage('Generate package.xml') {
             steps {
-                bat 'sf auth jwt grant --client-id %TARGET_CONSUMER_KEY% --jwt-key-file "%JWT_KEY%" --username %TARGET_USERNAME% --instance-url %SFDC_HOST% --alias %TARGET_ALIAS%'
+                bat """
+                sf project generate manifest --metadata "${params.METADATA}" --output-dir manifest
+                type manifest\\package.xml
+                """
             }
         }
-         stage('Validate Deployment (Check-Only)') {
-            steps {
-                echo 'Running check-only deployment to validate Student object and handler classes...'
-                bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --check-only --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests %TEST_CLASSES%'
-            }
-        }
-        stage('Actual Deployment') {
-            steps {
-                echo 'Validation passed! Proceeding with actual deployment...'
-                bat 'sf project deploy start --manifest manifest/package.xml --target-org %TARGET_ALIAS% --wait 10 --ignore-conflicts --test-level RunSpecifiedTests --tests %TEST_CLASSES%'
-            }
-        }
-         
-    }
-    
 
-    post {
-        always {
-            echo 'Deployment pipeline finished.'
-        
+        stage('Deploy to Org') {
+            steps {
+                bat """
+                sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level NoTestRun
+                """
+            }
         }
     }
 }
