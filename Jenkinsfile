@@ -16,6 +16,7 @@ pipeline {
     stages {
         stage('Checkout Git Branch') {
             steps {
+                echo "Checking out branch: ${params.BRANCH_NAME}"
                 git branch: "${params.BRANCH_NAME}", url: "${GIT_URL}"
             }
         }
@@ -30,24 +31,27 @@ pipeline {
                     ]
                     def creds = credsMap[params.TARGET_ORG]
 
-                    // Authenticate Salesforce CLI to the selected org
+                    echo "Authenticating ${params.TARGET_ORG} using JWT key at: ${JWT_KEY}"
+
                     bat """
-                        sf auth jwt grant ^
-                        --client-id ${creds.consumer} ^
-                        --jwt-key-file "${JWT_KEY}" ^
-                        --username ${creds.user} ^
-                        --instance-url ${SFDC_HOST} ^
-                        --alias ${params.TARGET_ORG}
+                    sf auth jwt grant ^
+                    --client-id ${creds.consumer} ^
+                    --jwt-key-file "${JWT_KEY}" ^
+                    --username ${creds.user} ^
+                    --instance-url ${SFDC_HOST} ^
+                    --alias ${params.TARGET_ORG}
                     """
                 }
             }
         }
 
-        stage('Generate package.xml') {
+        stage('Prepare Manifest') {
             steps {
                 bat """
-                    sf project generate manifest --metadata "${params.METADATA}" --output-dir manifest
-                    type manifest\\package.xml
+                if not exist manifest mkdir manifest
+                echo Generating package.xml for metadata: ${params.METADATA}
+                sf project generate manifest --metadata "${params.METADATA}" --output-dir manifest
+                type manifest\\package.xml
                 """
             }
         }
@@ -55,18 +59,29 @@ pipeline {
         stage('Deploy to Target Org') {
             steps {
                 bat """
-                    sf project deploy start ^
-                    --manifest manifest\\package.xml ^
-                    --target-org ${params.TARGET_ORG} ^
-                    --test-level NoTestRun
+                echo Deploying to ${params.TARGET_ORG}
+                sf project deploy start ^
+                --manifest manifest\\package.xml ^
+                --target-org ${params.TARGET_ORG} ^
+                --test-level NoTestRun ^
+                --json
                 """
+            }
+        }
+
+        stage('Validate Deployment') {
+            steps {
+                echo "Deployment finished. Check logs for any errors above."
             }
         }
     }
 
     post {
-        always {
-            echo 'Deployment finished successfully.'
+        success {
+            echo "✅ Deployment completed successfully!"
+        }
+        failure {
+            echo "❌ Deployment failed. Check the console output for errors."
         }
     }
 }
