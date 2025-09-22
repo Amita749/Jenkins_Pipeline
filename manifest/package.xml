@@ -17,15 +17,17 @@
     <name>ApexClass</name> 
 </types> --->
  <types>
-    <members>Student__c</members>
-    <name>CustomObject</name>
+    <members> TeacherHandler </members>
+    <name>ApexClass</naTeacherHandlerme>
 </types>
 <types>
-    <members>StudentHandler</members>
-    <members>StudentHandlerTest</members>
+    <members>TeacherHandlerTest</members>
     <name>ApexClass</name>
-</types>
-
+</types> 
+<types>
+    <members>Teacher__c</members>
+    <name>CustomObject</name>
+</types> 
     <version>64.0</version>
 </Package>
 
