@@ -14,6 +14,14 @@ pipeline {
     }
 
     stages {
+        stage('Debug Parameters') {
+    steps {
+        echo "BRANCH_NAME = ${params.BRANCH_NAME}"
+        echo "TARGET_ORG  = ${params.TARGET_ORG}"
+        echo "METADATA    = ${params.METADATA}"
+    }
+}
+
         stage('Checkout Git Branch') {
             steps {
                 echo "Checking out branch: ${params.BRANCH_NAME}"
