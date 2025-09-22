@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        JWT_KEY   = credentials('sf_jwt_key') // JWT private key stored in Jenkins
+        JWT_KEY   = credentials('sf_jwt_key') // JWT private key stored as "Secret file" in Jenkins
         SFDC_HOST = 'https://test.salesforce.com'
         GIT_URL   = 'https://github.com/Amita749/Jenkins_Pipeline.git'
     }
@@ -24,23 +24,26 @@ pipeline {
         stage('Authenticate Target Org') {
             steps {
                 script {
-                    // Map org aliases to their Consumer Keys and usernames
+                    // Map orgs to Jenkins credential IDs and usernames
                     def credsMap = [
-                        Jenkins1: [consumer: '3MVG9LY8n98IRTt0nbrFoCu_WHYCMj4Y_8VTI3HR0VXMQJ8Ebd3vVJBOml0d.rG6Xj5FpYKvbgYnh5tmp1DMl', user: 'naman.rawat@dynpro.com.jenkins1'],
-                        Jenkins2: [consumer: '3MVG9yFeMD.c3Gem6rRxnz7Izrn.P_h1U4SLqxUuP9SyLTVn.69cxB_preVAT1vU2MQKIB_RLF3Y.7W_lvoTE', user: 'naman.rawat@dynpro.com.jenkins2']
+                        Jenkins1: [consumerCredId: 'JENKINS1_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins1'],
+                        Jenkins2: [consumerCredId: 'JENKINS2_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins2']
                     ]
                     def creds = credsMap[params.TARGET_ORG]
 
-                    echo "Authenticating ${params.TARGET_ORG} using JWT key at: ${JWT_KEY}"
+                    // Fetch consumer key dynamically from Jenkins credentials
+                    withCredentials([string(credentialsId: creds.consumerCredId, variable: 'CONSUMER_KEY')]) {
+                        echo "Authenticating ${params.TARGET_ORG} with user ${creds.user}"
 
-                    bat """
-                    sf auth jwt grant ^
-                    --client-id ${creds.consumer} ^
-                    --jwt-key-file "${JWT_KEY}" ^
-                    --username ${creds.user} ^
-                    --instance-url ${SFDC_HOST} ^
-                    --alias ${params.TARGET_ORG}
-                    """
+                        bat """
+                        sf auth jwt grant ^
+                        --client-id ${CONSUMER_KEY} ^
+                        --jwt-key-file "${JWT_KEY}" ^
+                        --username ${creds.user} ^
+                        --instance-url ${SFDC_HOST} ^
+                        --alias ${params.TARGET_ORG}
+                        """
+                    }
                 }
             }
         }
@@ -66,12 +69,6 @@ pipeline {
                 --test-level NoTestRun ^
                 --json
                 """
-            }
-        }
-
-        stage('Validate Deployment') {
-            steps {
-                echo "Deployment finished. Check logs for any errors above."
             }
         }
     }
