@@ -26,8 +26,8 @@ pipeline {
                 script {
                     // Map org aliases to their Consumer Keys and usernames
                     def credsMap = [
-                        Jenkins1: [consumer: '3MVG9LY8n98IRTt0nbrFoCu_WHYCMj4Y_8VTI3HR0VXMQJ8Ebd3vVJBOml0d.rG6Xj5FpYKvbgYnh5tmp1DMl', user: 'jenkins1@example.com'],
-                        Jenkins2: [consumer: '3MVG9yFeMD.c3Gem6rRxnz7Izrn.P_h1U4SLqxUuP9SyLTVn.69cxB_preVAT1vU2MQKIB_RLF3Y.7W_lvoTE', user: 'jenkins2@example.com']
+                        Jenkins1: [consumer: '3MVG9LY8n98IRTt0nbrFoCu_WHYCMj4Y_8VTI3HR0VXMQJ8Ebd3vVJBOml0d.rG6Xj5FpYKvbgYnh5tmp1DMl', user: 'naman.rawat@dynpro.com.jenkins1'],
+                        Jenkins2: [consumer: '3MVG9yFeMD.c3Gem6rRxnz7Izrn.P_h1U4SLqxUuP9SyLTVn.69cxB_preVAT1vU2MQKIB_RLF3Y.7W_lvoTE', user: 'naman.rawat@dynpro.com.jenkins2']
                     ]
                     def creds = credsMap[params.TARGET_ORG]
 
