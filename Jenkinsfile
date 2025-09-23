@@ -69,18 +69,21 @@ pipeline {
         }
 
         stage('Deploy to Target Org') {
-            steps {
-                bat """
-                echo Deploying to ${params.TARGET_ORG}
-                sf project deploy start ^
-                --manifest manifest\\package.xml ^
-                --target-org ${params.TARGET_ORG} ^
-                --test-level NoTestRun ^
-                --json
-                """
-            }
-        }
+    steps {
+        bat """
+        echo Deploying to ${params.TARGET_ORG}
+        sf project deploy start ^
+        --manifest manifest\\package.xml ^
+        --target-org ${params.TARGET_ORG} ^
+        --test-level NoTestRun ^
+        --ignore-conflicts ^
+        --json
+        """
     }
+}
+    }
+
+    
 
     post {
         success {
