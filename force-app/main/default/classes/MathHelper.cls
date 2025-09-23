@@ -11,10 +11,10 @@ public class MathHelper {
     }
 
     // Method 3: Multiply two numbers
-   /* public Integer multiply(Integer a, Integer b) {
+   public Integer multiply(Integer a, Integer b) {
         return a * b;
     }
-
+/*
     // Method 4: Divide two numbers
     public Decimal divide(Decimal a, Decimal b) {
         if(b == 0) {
