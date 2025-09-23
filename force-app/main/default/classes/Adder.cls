@@ -8,10 +8,12 @@ public class Adder {
     public static Integer subtractNumbers(Integer a, Integer b) {
         return a - b;
     }
-    // Method to subtract two numbers
+   
+    // DEV: changed multiply logic to use Math.abs
     public static Integer multiplyNumbers(Integer a, Integer b) {
-        return a * b;
+        return Math.abs(a * b);
     }
+
     public static integer divnum(Integer a, Integer b){
         return a/b;
     }
