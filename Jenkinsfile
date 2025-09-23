@@ -8,7 +8,7 @@ pipeline {
     }
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'feature/dev1', description: 'Git branch to deploy from')
+        choice(name: 'BRANCH_NAME', choices: ['feature/dev1','feature/dev2','main'], description: 'Git branch to deploy from')
         choice(name: 'TARGET_ORG', choices: ['Jenkins1', 'Jenkins2'], description: 'Select target Salesforce Org')
         string(name: 'METADATA', defaultValue: 'ApexClass:MathHelper', description: 'Metadata to deploy (comma separated)')
     }
