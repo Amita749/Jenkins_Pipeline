@@ -14,6 +14,13 @@ private class AdderTest {
 
         Integer result = Adder.subtractNumbers(10,5);
         System.assertEquals(5, result, '10-5 should equal 5');
+    }
+    
+    @IsTest
+    static void testdivNumbers(){
+
+        Integer result = Adder.divnum(10,5);
+        System.assertEquals(2, 2, '10/5 should equal 2');
     }  
  }
 

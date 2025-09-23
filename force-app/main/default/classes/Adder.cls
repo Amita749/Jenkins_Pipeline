@@ -12,4 +12,7 @@ public class Adder {
     public static Integer multiplyNumbers(Integer a, Integer b) {
         return a * b;
     }
+    public static integer divnum(Integer a, Integer b){
+        return a/b;
+    }
 }
