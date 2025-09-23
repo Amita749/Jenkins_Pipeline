@@ -8,10 +8,10 @@ public class Adder {
     public static Integer subtractNumbers(Integer a, Integer b) {
         return a - b;
     }
-   
-    // DEV: changed multiply logic to use Math.abs
+    // QA: changed multiply logic to include debug log
     public static Integer multiplyNumbers(Integer a, Integer b) {
-        return Math.abs(a * b);
+        System.debug('Multiplying numbers in QA branch');
+        return a * b;
     }
 
     public static integer divnum(Integer a, Integer b){
