@@ -13,7 +13,8 @@ public class Adder {
         System.debug('Multiplying numbers in QA branch');
         return a * b;
     }
-
+  
+ // Method to two divide two numbers
     public static integer divnum(Integer a, Integer b){
         return a/b;
     }
