@@ -1,0 +1,12 @@
+public class Calculation {
+ // Method 1: Add two numbers
+    public Integer add(Integer a, Integer b) {
+        return a + b;
+    }
+
+    // Method 2: Subtract two numbers
+    public Integer subtract(Integer a, Integer b) {
+        return a - b;
+    }
+
+}
