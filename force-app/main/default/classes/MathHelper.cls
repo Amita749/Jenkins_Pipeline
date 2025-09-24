@@ -10,10 +10,7 @@ public class MathHelper {
         return a - b;
     }
 
-    // Method 3: Multiply two numbers
-   /* public Integer multiply(Integer a, Integer b) {
-        return a * b;
-    }
+   
 
     // Method 4: Divide two numbers
     public Decimal divide(Decimal a, Decimal b) {
@@ -24,8 +21,5 @@ public class MathHelper {
         return a / b;
     }
 
-    // Method 5: Check if a number is even
-    public Boolean isEven(Integer num) {
-        return (num % 2 == 0);
-    } */
+  
 }
