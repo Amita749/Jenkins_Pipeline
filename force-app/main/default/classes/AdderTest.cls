@@ -23,4 +23,3 @@ private class AdderTest {
         System.assertEquals(2, 2, '10/5 should equal 2');
     }  
  }
-
