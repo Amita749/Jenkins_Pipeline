@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        JWT_KEY   = credentials('sf_jwt_key') // JWT private key stored in Jenkins
+        JWT_KEY   = credentials('sf_jwt_key')
         SFDC_HOST = 'https://test.salesforce.com'
         GIT_URL   = 'https://github.com/Amita749/Jenkins_Pipeline.git'
     }
@@ -10,7 +10,7 @@ pipeline {
     parameters {
         choice(name: 'BRANCH_NAME', choices: ['feature/dev1','feature/dev2','main'], description: 'Git branch to deploy from')
         choice(name: 'TARGET_ORG', choices: ['Jenkins1', 'Jenkins2'], description: 'Select target Salesforce Org')
-        string(name: 'METADATA', defaultValue: '', description: 'Metadata to deploy (comma separated)')
+        string(name: 'METADATA', defaultValue: '', description: 'Metadata to deploy (comma separated, e.g., ApexClass:Demo)')
     }
 
     stages {
@@ -33,14 +33,12 @@ pipeline {
         stage('Authenticate Target Org') {
             steps {
                 script {
-                    // Map orgs to Jenkins credential IDs and usernames
                     def credsMap = [
                         Jenkins1: [consumerCredId: 'JENKINS1_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins1'],
                         Jenkins2: [consumerCredId: 'JENKINS2_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins2']
                     ]
                     def creds = credsMap[params.TARGET_ORG]
 
-                    // Fetch consumer key dynamically from Jenkins credentials
                     withCredentials([string(credentialsId: creds.consumerCredId, variable: 'CONSUMER_KEY')]) {
                         echo "Authenticating ${params.TARGET_ORG} with user ${creds.user}"
 
@@ -57,6 +55,30 @@ pipeline {
             }
         }
 
+        stage('Retrieve Target Org Metadata') {
+            steps {
+                bat """
+                echo Retrieving latest metadata from ${params.TARGET_ORG}...
+                sf project retrieve start ^
+                --metadata "${params.METADATA}" ^
+                --target-org ${params.TARGET_ORG} ^
+                --output-dir force-app
+                """
+            }
+        }
+
+        stage('Sync Retrieved Metadata with Git') {
+            steps {
+                bat """
+                git config user.name "jenkins-bot"
+                git config user.email "jenkins@company.com"
+                git add force-app/main/default/classes/*
+                git commit -m "Sync ${params.METADATA} from ${params.TARGET_ORG}" || echo "No changes to commit"
+                git push origin HEAD:${params.BRANCH_NAME} || echo "Nothing to push"
+                """
+            }
+        }
+
         stage('Prepare Manifest') {
             steps {
                 bat """
@@ -68,28 +90,25 @@ pipeline {
             }
         }
 
-      stage('Deploy to Target Org') {
-    steps {
-        bat """
-        echo Deploying to ${params.TARGET_ORG}
-        sf project deploy start ^
-        --manifest manifest\\package.xml ^
-        --target-org ${params.TARGET_ORG} ^
-        --test-level NoTestRun ^
-        --json ^
-        """
+        stage('Deploy to Target Org') {
+            steps {
+                bat """
+                echo Deploying to ${params.TARGET_ORG}...
+                sf project deploy start ^
+                --manifest manifest\\package.xml ^
+                --target-org ${params.TARGET_ORG} ^
+                --test-level NoTestRun
+                """
+            }
+        }
     }
-}
-    }
-
-    
 
     post {
         success {
             echo "✅ Deployment completed successfully!"
         }
         failure {
-            echo "❌ Deployment failed. Check the console output for errors."
+            echo "❌ Deployment failed. Check console output for errors."
         }
     }
 }
