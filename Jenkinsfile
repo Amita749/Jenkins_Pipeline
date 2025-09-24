@@ -55,30 +55,7 @@ pipeline {
             }
         }
 
-        stage('Retrieve Target Org Metadata') {
-            steps {
-                bat """
-                echo Retrieving latest metadata from ${params.TARGET_ORG}...
-                sf project retrieve start ^
-                --metadata "${params.METADATA}" ^
-                --target-org ${params.TARGET_ORG} ^
-                --output-dir force-app
-                """
-            }
-        }
-
-        stage('Sync Retrieved Metadata with Git') {
-            steps {
-                bat """
-                git config user.name "jenkins-bot"
-                git config user.email "jenkins@company.com"
-                git add force-app/main/default/classes/*
-                git commit -m "Sync ${params.METADATA} from ${params.TARGET_ORG}" || echo "No changes to commit"
-                git push origin HEAD:${params.BRANCH_NAME} || echo "Nothing to push"
-                """
-            }
-        }
-
+       
         stage('Prepare Manifest') {
             steps {
                 bat """
