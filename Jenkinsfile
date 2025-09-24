@@ -77,7 +77,7 @@ pipeline {
         --target-org ${params.TARGET_ORG} ^
         --test-level NoTestRun ^
         --json ^
-        --ignore-conflict
+        --ignoreconflicts
         """
     }
 }
