@@ -76,7 +76,6 @@ pipeline {
         --manifest manifest\\package.xml ^
         --target-org ${params.TARGET_ORG} ^
         --test-level NoTestRun ^
-        --ignore-conflicts ^
         --json
         """
     }
