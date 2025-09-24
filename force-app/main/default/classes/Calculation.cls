@@ -12,12 +12,9 @@ public class Calculation {
     public Integer multiply(Integer a, Integer b) {
         return a * b;
     }
-
     //Method 4: Divide two numbers
     public Integer divnum(Integer a, Integer b){
         return a/b;
     }
-
-
 
 }
