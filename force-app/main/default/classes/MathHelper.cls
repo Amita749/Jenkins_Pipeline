@@ -21,8 +21,5 @@ public class MathHelper {
         return a / b;
     }
 
-    // Method 5: Check if a number is even
-    public Boolean isEven(Integer num) {
-        return (num % 2 == 0);
-    } */
+   
 }
