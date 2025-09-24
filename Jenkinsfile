@@ -73,11 +73,11 @@ pipeline {
         bat """
         echo Deploying to ${params.TARGET_ORG}
         sf project deploy start ^
-        --manifest manifest\\package.xml ^
+        --manifest manifest\package.xml ^
         --target-org ${params.TARGET_ORG} ^
         --test-level NoTestRun ^
         --json ^
-        --c
+        --ignore-conflicts
         """
     }
 }
