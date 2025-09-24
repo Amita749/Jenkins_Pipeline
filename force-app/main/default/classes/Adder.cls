@@ -8,7 +8,7 @@ public class Adder {
     public static Integer subtractNumbers(Integer a, Integer b) {
         return a - b;
     }
-    // QA: changed multiply logic to include debug log
+    // QA: changed multiply logic to include debug 
     public static Integer multiplyNumbers(Integer a, Integer b) {
         System.debug('Multiplying numbers in QA branch');
         return a * b;
