@@ -8,5 +8,9 @@ public class Calculation {
     public Integer subtract(Integer a, Integer b) {
         return a - b;
     }
+    //Method 3: Multiply two numbers
+    public Integer multiply(Integer a, Integer b) {
+        return a * b;
+    }
 
 }
