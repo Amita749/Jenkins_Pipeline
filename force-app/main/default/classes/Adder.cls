@@ -15,7 +15,7 @@ public class Adder {
     }
   
  // Method to two divide two numbers
-    public static integer divnum(Integer a, Integer b){
+    public static Integer divnum(Integer a, Integer b){
         return a/b;
     }
 }
