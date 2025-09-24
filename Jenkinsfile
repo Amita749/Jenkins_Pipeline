@@ -68,7 +68,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Target Org') {
+      stage('Deploy to Target Org') {
     steps {
         bat """
         echo Deploying to ${params.TARGET_ORG}
@@ -76,7 +76,7 @@ pipeline {
         --manifest manifest\\package.xml ^
         --target-org ${params.TARGET_ORG} ^
         --test-level NoTestRun ^
-        --json
+        --json ^
         """
     }
 }

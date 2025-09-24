@@ -19,4 +19,5 @@ System.debug('this is demo class');
     public Integer divnum(Integer a, Integer b){
         return a/b;
     }
+
 }
