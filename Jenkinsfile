@@ -12,17 +12,17 @@ pipeline {
         choice(name: 'BRANCH_NAME', choices: ['feature/dev1','feature/dev2','main'], description: 'Git branch to deploy from')
         choice(name: 'TARGET_ORG', choices: ['Jenkins1', 'Jenkins2'], description: 'Select target Salesforce Org')
         string(name: 'METADATA', defaultValue: '', description: 'Metadata to deploy (comma separated, e.g., ApexClass:Demo)')
-        string(name: 'ROLLBACK_COMMIT', defaultValue: '', description: 'Commit ID to rollback to (leave blank to use backup)')
+        string(name: 'ROLLBACK_COMMIT', defaultValue: '', description: 'Commit ID to rollback to (required for rollback)')
     }
 
     stages {
 
         stage('Debug Parameters') {
             steps {
-                echo "ACTION      = ${params.ACTION}"
-                echo "BRANCH_NAME = ${params.BRANCH_NAME}"
-                echo "TARGET_ORG  = ${params.TARGET_ORG}"
-                echo "METADATA    = ${params.METADATA}"
+                echo "ACTION          = ${params.ACTION}"
+                echo "BRANCH_NAME     = ${params.BRANCH_NAME}"
+                echo "TARGET_ORG      = ${params.TARGET_ORG}"
+                echo "METADATA        = ${params.METADATA}"
                 echo "ROLLBACK_COMMIT = ${params.ROLLBACK_COMMIT}"
             }
         }
@@ -35,8 +35,8 @@ pipeline {
 
                 script {
                     if (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) {
-                        echo "Rolling back to commit: ${params.ROLLBACK_COMMIT}"
-                        sh "git checkout ${params.ROLLBACK_COMMIT}"
+                        echo "Rolling back to commit/tag: ${params.ROLLBACK_COMMIT}"
+                        bat "git checkout ${params.ROLLBACK_COMMIT}"
                     }
                 }
             }
@@ -67,22 +67,6 @@ pipeline {
             }
         }
 
-        stage('Backup Target Org') {
-            when { expression { params.ACTION == 'DEPLOY' } }
-            steps {
-                bat """
-                echo Taking backup from ${params.TARGET_ORG}...
-                if not exist backup mkdir backup
-                sf project retrieve start ^
-                --manifest manifest\\package.xml ^
-                --target-org ${params.TARGET_ORG} ^
-                --output-dir backup\\${params.TARGET_ORG}
-                tar -czf backup_${params.TARGET_ORG}.tar.gz backup\\${params.TARGET_ORG}
-                """
-                archiveArtifacts artifacts: "backup_${params.TARGET_ORG}.tar.gz", fingerprint: true
-            }
-        }
-
         stage('Prepare Manifest') {
             when { expression { params.ACTION == 'DEPLOY' || (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) } }
             steps {
@@ -99,33 +83,17 @@ pipeline {
             steps {
                 script {
                     if (params.ACTION == 'DEPLOY') {
-                        bat """
-                        echo Deploying to ${params.TARGET_ORG}...
-                        sf project deploy start ^
-                        --manifest manifest\\package.xml ^
-                        --target-org ${params.TARGET_ORG} ^
-                        --test-level NoTestRun
-                        """
+                        echo "Deploying latest code from ${params.BRANCH_NAME} to ${params.TARGET_ORG}"
                     } else {
-                        if (params.ROLLBACK_COMMIT?.trim()) {
-                            bat """
-                            echo Rolling back to commit ${params.ROLLBACK_COMMIT} on ${params.TARGET_ORG}...
-                            sf project deploy start ^
-                            --manifest manifest\\package.xml ^
-                            --target-org ${params.TARGET_ORG} ^
-                            --test-level NoTestRun
-                            """
-                        } else {
-                            bat """
-                            echo Rolling back using last backup for ${params.TARGET_ORG}...
-                            tar -xzf backup_${params.TARGET_ORG}.tar.gz
-                            sf project deploy start ^
-                            --source-dir backup\\${params.TARGET_ORG} ^
-                            --target-org ${params.TARGET_ORG} ^
-                            --test-level NoTestRun
-                            """
-                        }
+                        echo "Rolling back code to commit/tag ${params.ROLLBACK_COMMIT} on ${params.TARGET_ORG}"
                     }
+
+                    bat """
+                    sf project deploy start ^
+                    --manifest manifest\\package.xml ^
+                    --target-org ${params.TARGET_ORG} ^
+                    --test-level NoTestRun
+                    """
                 }
             }
         }
