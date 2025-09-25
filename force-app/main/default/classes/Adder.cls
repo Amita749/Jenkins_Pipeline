@@ -18,7 +18,7 @@ public class Adder {
     public static Integer divnum(Integer a, Integer b){
         return a/b;
     }
-    //Method to add three numbers 
+    //Method to add three number 
     public static Integer addThreeNumbers(Integer a, Integer b, Integer c){
         return a+b;
     }
