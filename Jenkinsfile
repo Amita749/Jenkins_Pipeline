@@ -2,45 +2,55 @@ pipeline {
     agent any
 
     environment {
-        JWT_KEY   = credentials('sf_jwt_key') // JWT private key stored in Jenkins
+        JWT_KEY   = credentials('sf_jwt_key')
         SFDC_HOST = 'https://test.salesforce.com'
         GIT_URL   = 'https://github.com/Amita749/Jenkins_Pipeline.git'
     }
 
     parameters {
+        choice(name: 'ACTION', choices: ['DEPLOY','ROLLBACK'], description: 'Choose Deploy or Rollback')
         choice(name: 'BRANCH_NAME', choices: ['feature/dev1','feature/dev2','main'], description: 'Git branch to deploy from')
         choice(name: 'TARGET_ORG', choices: ['Jenkins1', 'Jenkins2'], description: 'Select target Salesforce Org')
-        string(name: 'METADATA', defaultValue: '', description: 'Metadata to deploy (comma separated)')
+        string(name: 'METADATA', defaultValue: '', description: 'Metadata to deploy (comma separated, e.g., ApexClass:Demo)')
+        string(name: 'ROLLBACK_COMMIT', defaultValue: '', description: 'Commit ID to rollback to (required for rollback)')
     }
 
     stages {
 
         stage('Debug Parameters') {
             steps {
-                echo "BRANCH_NAME = ${params.BRANCH_NAME}"
-                echo "TARGET_ORG  = ${params.TARGET_ORG}"
-                echo "METADATA    = ${params.METADATA}"
+                echo "ACTION          = ${params.ACTION}"
+                echo "BRANCH_NAME     = ${params.BRANCH_NAME}"
+                echo "TARGET_ORG      = ${params.TARGET_ORG}"
+                echo "METADATA        = ${params.METADATA}"
+                echo "ROLLBACK_COMMIT = ${params.ROLLBACK_COMMIT}"
             }
         }
 
         stage('Checkout Git Branch') {
+            when { expression { params.ACTION == 'DEPLOY' || (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) } }
             steps {
                 echo "Checking out branch: ${params.BRANCH_NAME}"
                 git branch: "${params.BRANCH_NAME}", url: "${GIT_URL}"
+
+                script {
+                    if (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) {
+                        echo "Rolling back to commit/tag: ${params.ROLLBACK_COMMIT}"
+                        bat "git checkout ${params.ROLLBACK_COMMIT}"
+                    }
+                }
             }
         }
 
         stage('Authenticate Target Org') {
             steps {
                 script {
-                    // Map orgs to Jenkins credential IDs and usernames
                     def credsMap = [
                         Jenkins1: [consumerCredId: 'JENKINS1_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins1'],
                         Jenkins2: [consumerCredId: 'JENKINS2_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins2']
                     ]
                     def creds = credsMap[params.TARGET_ORG]
 
-                    // Fetch consumer key dynamically from Jenkins credentials
                     withCredentials([string(credentialsId: creds.consumerCredId, variable: 'CONSUMER_KEY')]) {
                         echo "Authenticating ${params.TARGET_ORG} with user ${creds.user}"
 
@@ -58,6 +68,7 @@ pipeline {
         }
 
         stage('Prepare Manifest') {
+            when { expression { params.ACTION == 'DEPLOY' || (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) } }
             steps {
                 bat """
                 if not exist manifest mkdir manifest
@@ -68,28 +79,32 @@ pipeline {
             }
         }
 
-      stage('Deploy to Target Org') {
-    steps {
-        bat """
-        echo Deploying to ${params.TARGET_ORG}
-        sf project deploy start ^
-        --manifest manifest\\package.xml ^
-        --target-org ${params.TARGET_ORG} ^
-        --test-level NoTestRun ^
-        --json ^
-        """
-    }
-}
-    }
+        stage('Deploy or Rollback') {
+            steps {
+                script {
+                    if (params.ACTION == 'DEPLOY') {
+                        echo "Deploying latest code from ${params.BRANCH_NAME} to ${params.TARGET_ORG}"
+                    } else {
+                        echo "Rolling back code to commit/tag ${params.ROLLBACK_COMMIT} on ${params.TARGET_ORG}"
+                    }
 
-    
+                    bat """
+                    sf project deploy start ^
+                    --manifest manifest\\package.xml ^
+                    --target-org ${params.TARGET_ORG} ^
+                    --test-level NoTestRun
+                    """
+                }
+            }
+        }
+    }
 
     post {
         success {
-            echo "✅ Deployment completed successfully!"
+            echo "✅ ${params.ACTION} completed successfully!"
         }
         failure {
-            echo "❌ Deployment failed. Check the console output for errors."
+            echo "❌ ${params.ACTION} failed. Check console output for errors."
         }
     }
 }
