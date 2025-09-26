@@ -46,3 +46,11 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Ignored secretr files 
+force-app/main/default/classes/OneDriveIntegrationCtrl.cls
+force-app/main/default/classes/OneDriveIntegrationCtrl.cls-meta.xml
+force-app/main/default/classes/OneDriveIntegrationCtrlV1.cls
+force-app/main/default/classes/OneDriveIntegrationCtrlV1.cls-meta.xml
+force-app/main/default/classes/OneDriveIntegrationCtrlTest.cls-meta.xml
+force-app/main/default/classes/OneDriveIntegrationCtrlTest.cls
