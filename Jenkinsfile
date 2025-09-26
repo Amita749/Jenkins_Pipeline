@@ -8,41 +8,19 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'ACTION', choices: ['DEPLOY','ROLLBACK'], description: 'Choose Deploy or Rollback')
-        choice(name: 'BRANCH_NAME', choices: ['feature/dev1','feature/dev2','main'], description: 'Git branch to deploy from')
-        choice(name: 'TARGET_ORG', choices: ['Jenkins1', 'Jenkins2'], description: 'Select target Salesforce Org')
-        string(name: 'METADATA', defaultValue: '', description: 'Metadata to deploy (comma separated, e.g., ApexClass:Demo)')
-        string(name: 'ROLLBACK_COMMIT', defaultValue: '', description: 'Commit ID to rollback to (required for rollback)')
+        choice(name: 'BRANCH_NAME', choices: ['feature/dev1','feature/dev2','main'])
+        choice(name: 'TARGET_ORG', choices: ['Jenkins1','Jenkins2'])
+        string(name: 'MAIN_CLASS', defaultValue: 'AdderHelper', description: 'Apex class to deploy')
+        string(name: 'TEST_CLASSES', defaultValue: 'AdderHelperTest', description: 'Comma-separated test classes to run/deploy')
+        string(name: 'ROLLBACK_COMMIT', defaultValue: '', description: 'Commit ID for rollback')
     }
 
     stages {
-
-        stage('Debug Parameters') {
-            steps {
-                echo "ACTION          = ${params.ACTION}"
-                echo "BRANCH_NAME     = ${params.BRANCH_NAME}"
-                echo "TARGET_ORG      = ${params.TARGET_ORG}"
-                echo "METADATA        = ${params.METADATA}"
-                echo "ROLLBACK_COMMIT = ${params.ROLLBACK_COMMIT}"
-            }
+        stage('Checkout') {
+            steps { git branch: "${params.BRANCH_NAME}", url: "${GIT_URL}" }
         }
 
-        stage('Checkout Git Branch') {
-            when { expression { params.ACTION == 'DEPLOY' || (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) } }
-            steps {
-                echo "Checking out branch: ${params.BRANCH_NAME}"
-                git branch: "${params.BRANCH_NAME}", url: "${GIT_URL}"
-
-                script {
-                    if (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) {
-                        echo "Rolling back to commit/tag: ${params.ROLLBACK_COMMIT}"
-                        bat "git checkout ${params.ROLLBACK_COMMIT}"
-                    }
-                }
-            }
-        }
-
-        stage('Authenticate Target Org') {
+        stage('Auth Org') {
             steps {
                 script {
                     def credsMap = [
@@ -50,61 +28,44 @@ pipeline {
                         Jenkins2: [consumerCredId: 'JENKINS2_CONSUMER_KEY', user: 'naman.rawat@dynpro.com.jenkins2']
                     ]
                     def creds = credsMap[params.TARGET_ORG]
-
                     withCredentials([string(credentialsId: creds.consumerCredId, variable: 'CONSUMER_KEY')]) {
-                        echo "Authenticating ${params.TARGET_ORG} with user ${creds.user}"
-
-                        bat """
-                        sf auth jwt grant ^
-                        --client-id ${CONSUMER_KEY} ^
-                        --jwt-key-file "${JWT_KEY}" ^
-                        --username ${creds.user} ^
-                        --instance-url ${SFDC_HOST} ^
-                        --alias ${params.TARGET_ORG}
-                        """
+                        bat "sf auth jwt grant --client-id %CONSUMER_KEY% --jwt-key-file \"%JWT_KEY%\" --username ${creds.user} --instance-url ${SFDC_HOST} --alias ${params.TARGET_ORG}"
                     }
                 }
             }
         }
 
         stage('Prepare Manifest') {
-            when { expression { params.ACTION == 'DEPLOY' || (params.ACTION == 'ROLLBACK' && params.ROLLBACK_COMMIT?.trim()) } }
             steps {
-                bat """
-                if not exist manifest mkdir manifest
-                echo Generating package.xml for metadata: ${params.METADATA}
-                sf project generate manifest --metadata "${params.METADATA}" --output-dir manifest
-                type manifest\\package.xml
-                """
+                bat "sf project generate manifest --metadata \"ApexClass:${params.MAIN_CLASS},${params.TEST_CLASSES.replaceAll(',',',ApexClass:')}\" --output-dir manifest"
             }
         }
 
-        stage('Deploy or Rollback') {
+        stage('Validate and Deploy') {
             steps {
                 script {
-                    if (params.ACTION == 'DEPLOY') {
-                        echo "Deploying latest code from ${params.BRANCH_NAME} to ${params.TARGET_ORG}"
+                    def testParam = params.TEST_CLASSES.replaceAll(',',',')
+                    def validate = bat(returnStatus: true, script: "sf project deploy validate --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level RunSpecifiedTests --tests ${testParam}")
+                    
+                    if (validate != 0) {
+                        echo "❌ Validation failed, rolling back..."
+                        bat "git checkout ${params.ROLLBACK_COMMIT}"
+                        bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level NoTestRun"
+                        currentBuild.description = "Rollback performed"
                     } else {
-                        echo "Rolling back code to commit/tag ${params.ROLLBACK_COMMIT} on ${params.TARGET_ORG}"
+                        echo "✅ Validation passed, deploying..."
+                        bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level RunSpecifiedTests --tests ${testParam}"
+                        currentBuild.description = "Deployment successful"
                     }
-
-                    bat """
-                    sf project deploy start ^
-                    --manifest manifest\\package.xml ^
-                    --target-org ${params.TARGET_ORG} ^
-                    --test-level NoTestRun
-                    """
                 }
             }
         }
     }
 
     post {
-        success {
-            echo "✅ ${params.ACTION} completed successfully!"
-        }
-        failure {
-            echo "❌ ${params.ACTION} failed. Check console output for errors."
+        always {
+            echo "🔹 Build Status: ${currentBuild.currentResult}"
+            echo "🔹 Action Description: ${currentBuild.description}"
         }
     }
 }
