@@ -39,7 +39,7 @@ pipeline {
 
         stage('Prepare Manifest') {
             steps {
-                bat "sf project generate manifest --metadata \"ApexClass:${params.MAIN_CLASS},${params.TEST_CLASSES.replaceAll(',',',ApexClass:')}\" --output-dir manifest"
+                bat "sf project generate manifest --metadata \"ApexClass:${params.METADATA},${params.TEST_CLASSES.replaceAll(',',',ApexClass:')}\" --output-dir manifest"
             }
         }
 
