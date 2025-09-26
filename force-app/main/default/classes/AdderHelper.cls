@@ -7,8 +7,15 @@ public with sharing class AdderHelper {
     public static Integer addNum(Integer a, Integer b, Integer c) {
         return a + b + c;
     }
+
+    //Method to multiply two numbers
+     public static Integer multiplyNum(Integer a, Integer b, Integer c) {
+        return a*b*c;
+     }
+
     //Method to subtract two numbers
     public static Integer subtractNumbers(Integer a, Integer b) {
         return a - b;
+
     }
 }
