@@ -1,5 +1,6 @@
 public with sharing class AdderHelper {
-    public AdderHelper() {
-    System.debug('new adderhelper class is created');
+    // Method to add two numbers
+    public static Integer addNumbers(Integer a, Integer b) {
+        return a + b;
     }
 }
