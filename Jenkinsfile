@@ -52,7 +52,7 @@ pipeline {
                     if (validate != 0) {
                         echo "❌ Validation failed, rolling back..."
                         bat "git checkout ${params.ROLLBACK_COMMIT}"
-                        bat "sf project deploy start --manifest manifest\package.xml --target-org ${params.TARGET_ORG} --test-level NoTestRun --ignore-conflicts"
+                        bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level NoTestRun --ignore-conflicts"
                         currentBuild.description = "Rollback performed"
                     } else {
                         echo "✅ Validation passed, deploying..."
