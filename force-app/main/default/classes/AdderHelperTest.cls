@@ -16,5 +16,5 @@ public with sharing class AdderHelperTest {
     static void testMulNum() {
         Integer result = AdderHelper.multiplyNum(5, 10,2);
         System.assertEquals(100, result, '5*10*2 should equal 100');
-}
+    }
 }
