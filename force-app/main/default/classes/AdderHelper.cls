@@ -11,4 +11,8 @@ public with sharing class AdderHelper {
      public static Integer multiplyNum(Integer a, Integer b, Integer c) {
         return a*b*c;
     }
+    //Method to divide two numbers 
+     public static Integer divNum(Integer a, Integer b) {
+        return a/b;
+    }
 }
