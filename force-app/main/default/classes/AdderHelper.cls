@@ -13,6 +13,5 @@ public with sharing class AdderHelper {
     }
     //Method to divide two numbers 
      public static Integer divNum(Integer a, Integer b) {
-        return a/b;
-    }
+        return a/b;}
 }
