@@ -19,7 +19,7 @@ public with sharing class AdderHelperTest {
     }
     @IsTest
      static void testdiv() {
-        Integer result = AdderHelper.divNum(10,2);
-        System.assertEquals(5, result, '10/5 should equal 2');
+        Integer result = AdderHelper.divNum(10,5);
+        System.assertEquals(2, result, '10/5 should equal 2');
     }
 }
