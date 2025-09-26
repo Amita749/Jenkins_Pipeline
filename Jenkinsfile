@@ -50,11 +50,11 @@ pipeline {
                     def validate = bat(returnStatus: true, script: "sf project deploy validate --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level RunSpecifiedTests --tests ${testParam}")
                     
                     if (validate != 0) {
-                        echo "❌ Validation failed, rolling back..."
-                        bat "git checkout ${params.ROLLBACK_COMMIT}"
-                        bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level NoTestRun --ignore-conflicts"
-                        currentBuild.description = "Rollback performed"
-                    } else {
+                         echo "❌ Validation failed. No changes were deployed to org."
+                currentBuild.description = "Validation failed - no deployment"
+                error("Stopping pipeline because validation failed")
+                    } 
+                    else {
                         echo "✅ Validation passed, deploying..."
                         bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level RunSpecifiedTests --tests ${testParam}"
                         currentBuild.description = "Deployment successful"
