@@ -12,4 +12,14 @@ public with sharing class AdderHelperTest {
         Integer result = AdderHelper.addNum(5, 10,2);
         System.assertEquals(17, result, '5 + 10+2 should equal 17');
 }
+     @IsTest
+    static void testMulNum() {
+        Integer result = AdderHelper.multiplyNum(5, 10,2);
+        System.assertEquals(100, result, '5*10*2 should equal 100');
+    }
+    @IsTest
+     static void testdiv() {
+        Integer result = AdderHelper.divNum(10,5);
+        System.assertEquals(2, result, '10/5 should equal 2');
+    }
 }
