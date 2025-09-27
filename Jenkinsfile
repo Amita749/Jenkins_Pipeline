@@ -68,7 +68,7 @@ pipeline {
                     // Prepare test class param, safe for empty
                     def testParam = params.TEST_CLASSES?.trim() ?: ""
                     
-                    def validate = bat(returnStatus: true, script: "sf project deploy validate --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} ")
+                    def validate = bat(returnStatus: true, script: "sf project deploy validate --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level RunSpecifiedTests --tests ${testParam}")
                     
                     if (validate != 0) {
                          echo "❌ Validation failed. No changes were deployed to org."
@@ -77,7 +77,7 @@ pipeline {
                     } 
                     else {
                         echo "✅ Validation passed, deploying..."
-                        bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} "
+                        bat "sf project deploy start --manifest manifest\\package.xml --target-org ${params.TARGET_ORG} --test-level RunSpecifiedTests --tests ${testParam}"
                         currentBuild.description = "Deployment successful"
                     }
                 }
