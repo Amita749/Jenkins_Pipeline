@@ -1,33 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
- <!--  <types>
-    <members>HelloWorldClass</members>
-    <name>ApexClass</name>
-</types>
-<types>
-    <members>HelloWorldClassTest</members>
-    <name>ApexClass</name>
-</types> 
-    <types>
-    <members>Adder</members>
-    <name>ApexClass</name>
-</types>
-<types>
-    <members>AdderTest</members>
-    <name>ApexClass</name> 
-</types> --->
  <types>
-    <members> TeacherHandler </members>
+    <members>Math</members>
     <name>ApexClass</name>
 </types>
 <types>
-    <members>TeacherHandlerTest</members>
+    <members>MathTest</members>
     <name>ApexClass</name>
 </types> 
-<types>
-    <members>Teacher__c</members>
-    <name>CustomObject</name>
-</types> 
+   
     <version>64.0</version>
 </Package>
 
