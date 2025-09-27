@@ -7,7 +7,7 @@ public with sharing class MathTest {
 }
      @IsTest
     static void testAddNum() {
-        Integer result = AdderHelper.addNum(5, 10,2);
+        Integer result = Math.addNum(5, 10,2);
         System.assertEquals(17, result, '5 + 10+2 should equal 17');
 }
 
