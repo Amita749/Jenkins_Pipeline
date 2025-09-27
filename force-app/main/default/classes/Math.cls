@@ -7,4 +7,8 @@ public with sharing class Math {
     public static Integer addNum(Integer a, Integer b, Integer c) {
         return a + b + c;
     }
+    //Method to add four numbers 
+     public static Integer addFour(Integer a, Integer b, Integer c, Integer d) {
+        return a + b + c + d;
+    }
 }
